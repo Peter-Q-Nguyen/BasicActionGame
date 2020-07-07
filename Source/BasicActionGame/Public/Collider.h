@@ -38,6 +38,11 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Mesh")
 	class USpringArmComponent* SpringArmComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "Movement")
+	class UColliderMovementComponent* OurMovementComponent;
+
+	virtual UPawnMovementComponent* GetMovementComponent() const override;
+
 
 	FORCEINLINE UStaticMeshComponent* GetMeshComponent() { return MeshComponent; }
 	FORCEINLINE void SetMeshComponent(UStaticMeshComponent* Mesh) { MeshComponent = Mesh; }
@@ -51,6 +56,11 @@ public:
 
 private:
 
-	void MoveForward(float Value);
-	void MoveRight(float Value);
+	void MoveForward(float InputValue);
+	void MoveRight(float InputValue);
+
+	void PitchCamera(float AxisValue);
+	void YawCamera(float AxisValue);
+
+	FVector2D CameraInput;
 };

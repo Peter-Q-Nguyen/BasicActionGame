@@ -6,6 +6,7 @@
 #include "Components/InputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "ColliderMovementComponent.h"
 
 // Sets default values
 ACollider::ACollider()
@@ -13,10 +14,9 @@ ACollider::ACollider()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
-
 	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
-	SphereComponent->SetupAttachment(GetRootComponent());
+	SetRootComponent(SphereComponent);
+
 	SphereComponent->InitSphereRadius(40.0f);
 	SphereComponent->SetCollisionProfileName(TEXT("Pawn"));
 
@@ -42,6 +42,10 @@ ACollider::ACollider()
 	CameraComponent->SetupAttachment(SpringArmComponent, USpringArmComponent::SocketName);
 	//CameraComponent->SetRelativeLocation(FVector(-300.f, 0.f, 300.f));
 	//CameraComponent->SetRelativeRotation(FRotator(-45.f, 0.f, 0.f));
+	OurMovementComponent = CreateDefaultSubobject<UColliderMovementComponent>(TEXT("OurMovementComponent"));
+	OurMovementComponent->UpdatedComponent = RootComponent;
+
+	CameraInput = FVector2D(0.f, 0.f);
 
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 }
@@ -58,6 +62,15 @@ void ACollider::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	FRotator NewRotation = GetActorRotation();
+	NewRotation.Yaw += CameraInput.X;
+	//NewRotation.Pitch += CameraInput.Y;
+	SetActorRotation(NewRotation);
+
+	FRotator NewSpringArmRotation = SpringArmComponent->GetComponentRotation();
+	NewSpringArmRotation.Pitch = FMath::Clamp(NewSpringArmRotation.Pitch += CameraInput.Y, -80.f, -15.f);
+	SpringArmComponent->SetWorldRotation(NewSpringArmRotation);
+
 }
 
 // Called to bind functionality to input
@@ -68,15 +81,43 @@ void ACollider::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &ACollider::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &ACollider::MoveRight);
 
+	PlayerInputComponent->BindAxis(TEXT("CameraPitch"), this, &ACollider::PitchCamera);
+	PlayerInputComponent->BindAxis(TEXT("CameraYaw"), this, &ACollider::YawCamera);
+
 }
 
-void ACollider::MoveForward(float Value) 
+UPawnMovementComponent* ACollider::GetMovementComponent() const
+{
+	return OurMovementComponent;
+}
+
+void ACollider::MoveForward(float InputValue)
 {
 	FVector Forward = GetActorForwardVector();
-	AddMovementInput(Value * Forward);
+	//AddMovementInput(InputValue * Forward);
+	if (OurMovementComponent)
+	{
+		OurMovementComponent->AddInputVector(Forward * InputValue * 10);
+	}
+
 }
-void ACollider::MoveRight(float Value) 
+void ACollider::MoveRight(float InputValue) 
 {
-	FVector Forward = GetActorRightVector();
-	AddMovementInput(Value * Forward);
+	FVector Right = GetActorRightVector();
+	if (OurMovementComponent)
+	{
+		OurMovementComponent->AddInputVector(Right * InputValue);
+	}
 }
+
+void ACollider::YawCamera(float AxisValue)
+{
+	CameraInput.X = AxisValue;
+}
+
+void ACollider::PitchCamera(float AxisValue)
+{
+	CameraInput.Y = AxisValue;
+}
+
+
