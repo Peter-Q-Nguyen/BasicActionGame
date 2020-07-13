@@ -7,6 +7,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Gameframework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Weapon.h"
 
 // Sets default values
 AMain::AMain()
@@ -57,6 +58,7 @@ AMain::AMain()
 	SprintingSpeed = 950.f;
 
 	bShiftKeyDown = false;
+	bTakeActionKeyDown = false;
 
 	//initialise Enums
 	MovementStatus = EMovementStatus::EMS_Normal;
@@ -180,6 +182,9 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AMain::ShiftKeyDown);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AMain::ShiftKeyUp);
 
+	PlayerInputComponent->BindAction("TakeAction", IE_Pressed, this, &AMain::TakeActionKeyDown);
+	PlayerInputComponent->BindAction("TakeAction", IE_Released, this, &AMain::TakeActionKeyUp);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMain::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMain::MoveRight);
 
@@ -188,6 +193,9 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAxis("TurnRate", this, &AMain::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AMain::LookUpRate);
+
+
+
 }
 
 void AMain::MoveForward(float Value)
@@ -222,6 +230,28 @@ void AMain::TurnAtRate(float Rate)
 void AMain::LookUpRate(float Rate)
 {
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+}
+
+void AMain::TakeActionKeyDown()
+{
+	bTakeActionKeyDown = true;
+
+	if (ActiveOverlappingItem)
+	{
+		AWeapon* Weapon = Cast<AWeapon>(ActiveOverlappingItem);
+		if (Weapon)
+		{
+			//SetEquippedWeapon(Weapon);
+			Weapon->Equip(this);
+			SetActiveOverlappingItem(nullptr);
+		}
+	}
+
+}
+
+void AMain::TakeActionKeyUp()
+{
+	bTakeActionKeyDown = false;
 }
 
 void AMain::DecrementHealth(float Amount)

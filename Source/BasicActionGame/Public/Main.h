@@ -38,6 +38,7 @@ public:
 
 	TArray<FVector> PickupLocations;
 
+
 	UFUNCTION(BlueprintCallable)
 	void ShowPickupLocations();
 
@@ -135,6 +136,20 @@ public:
 	*/
 	void LookUpRate(float Rate);
 
+	bool bTakeActionKeyDown;
+	void TakeActionKeyDown();
+	void TakeActionKeyUp();
+
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Items")
+	class AWeapon* EquippedWeapon;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Items")
+	class AItem* ActiveOverlappingItem;
+
+	FORCEINLINE void SetEquippedWeapon(AWeapon* WeaponToSet) { EquippedWeapon = WeaponToSet; }
+	FORCEINLINE void SetActiveOverlappingItem(AItem* Item) { ActiveOverlappingItem = Item; }
+
 };
