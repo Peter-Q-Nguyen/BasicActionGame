@@ -8,6 +8,8 @@
 #include "Gameframework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Weapon.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimInstance.h"
 
 // Sets default values
 AMain::AMain()
@@ -67,6 +69,8 @@ AMain::AMain()
 	StaminaDrainRate = 25.f;
 
 	MinSprintStamina = 50.f;
+
+	bAttacking = false;
 }
 
 // Called when the game starts or when spawned
@@ -87,6 +91,9 @@ void AMain::Tick(float DeltaTime)
 	case EStaminaStatus::ESS_Normal:
 		if (bShiftKeyDown)
 		{
+			if (GetCharacterMovement()->GetCurrentAcceleration().Size() == 0)
+				break;
+
 			if (Stamina - DeltaStamina <= MinSprintStamina)
 			{
 				SetStaminaStatus(EStaminaStatus::ESS_BelowMinimum);
@@ -114,6 +121,8 @@ void AMain::Tick(float DeltaTime)
 	case EStaminaStatus::ESS_BelowMinimum:
 		if (bShiftKeyDown)
 		{
+			if (GetCharacterMovement()->GetCurrentAcceleration().Size() == 0)
+				break;
 			if (Stamina - DeltaStamina <= 0.f)
 			{
 				SetStaminaStatus(EStaminaStatus::ESS_Exhausted);
@@ -131,11 +140,12 @@ void AMain::Tick(float DeltaTime)
 			if (Stamina + DeltaStamina >= MinSprintStamina)
 			{
 				Stamina += DeltaStamina;
-				SetStaminaStatus(EStaminaStatus::ESS_BelowMinimum);
+				SetStaminaStatus(EStaminaStatus::ESS_Normal);
 			}
 			else
 			{
 				Stamina += DeltaStamina;
+				SetStaminaStatus(EStaminaStatus::ESS_BelowMinimum);
 			}
 			SetMovementStatus(EMovementStatus::EMS_Normal);
 		}
@@ -200,7 +210,7 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AMain::MoveForward(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.0f))
+	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking))
 	{
 		// Find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -212,14 +222,17 @@ void AMain::MoveForward(float Value)
 }
 
 
-void AMain::MoveRight(float Value)
+void AMain::MoveRight(float Value )
 {
-	// Find out which way is forward
-	const FRotator Rotation = Controller->GetControlRotation();
-	const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
+	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking))
+	{
+		// Find out which way is forward
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
 
-	const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-	AddMovementInput(Direction, Value);
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		AddMovementInput(Direction, Value);
+	}
 }
 
 void AMain::TurnAtRate(float Rate)
@@ -246,7 +259,10 @@ void AMain::TakeActionKeyDown()
 			SetActiveOverlappingItem(nullptr);
 		}
 	}
-
+	else if (EquippedWeapon)
+	{
+		Attack();
+	}
 }
 
 void AMain::TakeActionKeyUp()
@@ -316,4 +332,48 @@ void AMain::ShowPickupLocations()
 		UKismetSystemLibrary::DrawDebugSphere(this, Location, 50.f, 12, FLinearColor::Green, 10.f, .5f);
 
 	}
+}
+
+void AMain::SetEquippedWeapon(AWeapon* WeaponToSet)
+{
+	if (EquippedWeapon)
+		EquippedWeapon->Destroy();
+	EquippedWeapon = WeaponToSet;
+}
+
+void AMain::Attack()
+{
+	if (bAttacking == false)
+	{
+		bAttacking = true;
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && CombatMontage)
+		{
+			int32 Selection = FMath::RandRange(0, 1);
+			switch (Selection)
+			{
+			case 0:
+				AnimInstance->Montage_Play(CombatMontage, 2.0f);
+				AnimInstance->Montage_JumpToSection(FName("Attack_1"), CombatMontage);
+				break;
+			case 1:
+				AnimInstance->Montage_Play(CombatMontage, 1.2f);
+				AnimInstance->Montage_JumpToSection(FName("Attack_2"), CombatMontage);
+				break;
+
+			}
+
+		}
+	}
+}
+
+void AMain::AttackEnd()
+{
+	bAttacking = false;
+	if (bTakeActionKeyDown)
+	{
+		Attack();
+	}
+
 }
