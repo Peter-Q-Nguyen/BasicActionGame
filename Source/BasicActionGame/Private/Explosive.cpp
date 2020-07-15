@@ -12,7 +12,7 @@ AExplosive::AExplosive()
 void AExplosive::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	Super::OnOverlapBegin(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-	UE_LOG(LogTemp, Warning, TEXT("On Overlap Child Begin"));
+//	UE_LOG(LogTemp, Warning, TEXT("On Overlap Child Begin"));
 
 	if (OtherActor)
 	{
@@ -29,5 +29,5 @@ void AExplosive::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 void AExplosive::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	Super::OnOverlapEnd(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
-	UE_LOG(LogTemp, Warning, TEXT("On Overlap Child End"));
+	//UE_LOG(LogTemp, Warning, TEXT("On Overlap Child End"));
 }

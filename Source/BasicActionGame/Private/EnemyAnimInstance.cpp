@@ -1,11 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MainAnimInstance.h"
-#include "Gameframework/CharacterMovementComponent.h"
-#include "Main.h"
+#include "EnemyAnimInstance.h"
+#include "Enemy.h"
 
-void UMainAnimInstance::NativeInitializeAnimation()
+void UEnemyAnimInstance::NativeInitializeAnimation()
 {
 	if (Pawn == nullptr)
 	{
@@ -13,20 +12,20 @@ void UMainAnimInstance::NativeInitializeAnimation()
 
 		if (Pawn)
 		{
-			Main = Cast<AMain>(Pawn);
+			Enemy = Cast<AEnemy>(Pawn);
 
 		}
 	}
 }
 
-void UMainAnimInstance::UpdateAnimationProperties()
+void UEnemyAnimInstance::UpdateAnimationProperties()
 {
 	if (Pawn == nullptr)
 	{
 		Pawn = TryGetPawnOwner();
 		if (Pawn)
 		{
-			Main = Cast<AMain>(Pawn);
+			Enemy = Cast<AEnemy>(Pawn);
 
 		}
 	}
@@ -37,6 +36,5 @@ void UMainAnimInstance::UpdateAnimationProperties()
 		FVector LateralSpeed = FVector(Speed.X, Speed.Y, 0.f);
 		MovementSpeed = LateralSpeed.Size();
 
-		bIsInAir = Pawn->GetMovementComponent()->IsFalling();
 	}
 }

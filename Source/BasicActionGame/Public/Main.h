@@ -9,18 +9,18 @@
 UENUM(BlueprintType)
 enum class EMovementStatus : uint8
 {
-	EMS_Normal UMETA(DisplayName = "Normal"),
-	EMS_Sprint UMETA(DisplayName = "Sprinting"),
+	EMS_Normal		UMETA(DisplayName = "Normal"),
+	EMS_Sprint		UMETA(DisplayName = "Sprinting"),
 
-	EMS_Max UMETA(DisplayName = "DefaultMAX")
+	EMS_Max			UMETA(DisplayName = "DefaultMAX")
 };
 
 UENUM(BlueprintType)
 enum class EStaminaStatus : uint8
 {
-	ESS_Normal UMETA(DisplayName = "Normal"),
-	ESS_BelowMinimum UMETA(DisplayName = "BelowMinimum"),
-	ESS_Exhausted UMETA(DisplayName = "Exhausted"),
+	ESS_Normal				UMETA(DisplayName = "Normal"),
+	ESS_BelowMinimum		UMETA(DisplayName = "BelowMinimum"),
+	ESS_Exhausted			UMETA(DisplayName = "Exhausted"),
 	ESS_ExhaustedRecovering UMETA(DisplayName = "ESS_ExhaustedRecovering"),
 
 	ESS_Max UMETA(DisplayName = "DefaultMAX")

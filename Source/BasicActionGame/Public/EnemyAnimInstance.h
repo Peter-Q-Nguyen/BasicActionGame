@@ -4,16 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "MainAnimInstance.generated.h"
+#include "EnemyAnimInstance.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class BASICACTIONGAME_API UMainAnimInstance : public UAnimInstance
+class BASICACTIONGAME_API UEnemyAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
-
 public:
 
 	virtual void NativeInitializeAnimation() override;
@@ -21,15 +20,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AnimationProperties")
 	void UpdateAnimationProperties();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly,  Category = "Movement")
-	float MovementSpeed;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
-	bool bIsInAir;
+	float MovementSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	class APawn* Pawn;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-	class AMain* Main;
+	class AEnemy* Enemy;
 };
