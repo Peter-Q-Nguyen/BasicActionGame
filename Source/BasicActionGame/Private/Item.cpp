@@ -25,6 +25,7 @@ AItem::AItem()
 
 	bRotate = false;
 	RotationRate = 45.f;
+
 }
 
 // Called when the game starts or when spawned

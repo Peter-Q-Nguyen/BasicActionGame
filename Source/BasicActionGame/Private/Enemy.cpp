@@ -22,7 +22,11 @@ AEnemy::AEnemy()
 	CombatSphere->InitSphereRadius(75.f);
 
 	bIsOverlappingCombatSphere = false;
+	Health = 75.f;
+	MaxHealth = 100.f;
+	Damage = 10.f;
 
+	EnemyMovementStatus = EEnemyMovementStatus::EMS_Idle;
 }
 
 // Called when the game starts or when spawned
