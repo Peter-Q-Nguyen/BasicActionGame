@@ -43,6 +43,9 @@ AEnemy::AEnemy()
 	CombatCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 
 	bAttacking = false;
+
+	AttackMinTime = 0.5f;
+	AttackMaxTime = 3.5f;
 }
 
 // Called when the game starts or when spawned
@@ -238,7 +241,8 @@ void AEnemy::AttackEnd()
 
 	if (bIsOverlappingCombatSphere)
 	{
-		Attack();
+		float AttackTime = FMath::FRandRange(AttackMinTime, AttackMaxTime);
+		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy::Attack, AttackTime);
 	}
 }
 
