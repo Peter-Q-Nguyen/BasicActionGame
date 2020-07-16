@@ -6,6 +6,7 @@
 
 void UEnemyAnimInstance::NativeInitializeAnimation()
 {
+	bIsAttacking = false;
 	if (Pawn == nullptr)
 	{
 		Pawn = TryGetPawnOwner();
@@ -35,6 +36,11 @@ void UEnemyAnimInstance::UpdateAnimationProperties()
 		FVector Speed = Pawn->GetVelocity();
 		FVector LateralSpeed = FVector(Speed.X, Speed.Y, 0.f);
 		MovementSpeed = LateralSpeed.Size();
+
+		if (Enemy->EnemyMovementStatus == EEnemyMovementStatus::EMS_Attacking)
+			bIsAttacking = true;
+		else
+			bIsAttacking = false;
 
 	}
 }

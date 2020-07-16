@@ -7,6 +7,9 @@
 
 void UMainAnimInstance::NativeInitializeAnimation()
 {
+	bIsWeaponEquipped = false;
+	bIsCurrentlySprinting = false;
+
 	if (Pawn == nullptr)
 	{
 		Pawn = TryGetPawnOwner();
@@ -38,5 +41,8 @@ void UMainAnimInstance::UpdateAnimationProperties()
 		MovementSpeed = LateralSpeed.Size();
 
 		bIsInAir = Pawn->GetMovementComponent()->IsFalling();
+
+		bIsCurrentlySprinting = (Main->MovementStatus == EMovementStatus::EMS_Sprint ? true : false);
+		bIsWeaponEquipped = Main->EquippedWeapon == nullptr ? false : true;
 	}
 }

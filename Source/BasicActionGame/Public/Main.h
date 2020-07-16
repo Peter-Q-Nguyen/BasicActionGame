@@ -38,6 +38,11 @@ public:
 
 	TArray<FVector> PickupLocations;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	class UParticleSystem* HitParticles;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
+	class USoundCue* HitSound;
 
 	UFUNCTION(BlueprintCallable)
 	void ShowPickupLocations();
@@ -54,6 +59,17 @@ public:
 	float StaminaDrainRate;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float MinSprintStamina;
+
+	float InterpSpeed;
+	bool bInterpToEnemy;
+	void SetInterpToEnemy(bool Interp);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	class AEnemy* CombatTarget;
+
+	FORCEINLINE void SetCombatTarget(AEnemy* Target) { CombatTarget = Target; }
+
+	FRotator GetLookAtRotationYaw(FVector Target);
 
 
 	/** Set movment status and running speed*/
@@ -109,6 +125,8 @@ public:
 
 	void IncrementCoin(int32 Amount);
 
+
+
 protected:
 	/**  Called when the game starts or when spawned */
 	virtual void BeginPlay() override;
@@ -157,9 +175,13 @@ public:
 	bool bAttacking;
 
 	void Attack();
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Anims")
 	class UAnimMontage* CombatMontage;
 
 	UFUNCTION(BlueprintCallable)
 	void AttackEnd();
+
+	UFUNCTION(BlueprintCallable)
+	void PlaySwingSound();
 };
