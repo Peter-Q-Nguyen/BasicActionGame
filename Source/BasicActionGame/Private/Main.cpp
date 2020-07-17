@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Enemy.h"
+#include "MainPlayerController.h"
 
 // Sets default values
 AMain::AMain()
@@ -78,18 +79,26 @@ AMain::AMain()
 
 	InterpSpeed = 15.f;
 	bInterpToEnemy = false;
+
+	bHasCombatTarget = false;
 }
 
 // Called when the game starts or when spawned
 void AMain::BeginPlay()
 {
 	Super::BeginPlay();
+
+	MainPlayerController = Cast<AMainPlayerController>(GetController());
+
 }
 
 // Called every frame
 void AMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (MovementStatus == EMovementStatus::EMS_Dead)
+		return;
 
 	float DeltaStamina = StaminaDrainRate * DeltaTime;
 
@@ -190,6 +199,15 @@ void AMain::Tick(float DeltaTime)
 		FRotator InterpRotation = FMath::RInterpTo(GetActorRotation(), LookAtYaw, DeltaTime, InterpSpeed);
 		SetActorRotation(InterpRotation);
 	}
+
+	if (CombatTarget)
+	{
+		CombatTargetLocation = CombatTarget->GetActorLocation();
+		if (MainPlayerController)
+		{
+			MainPlayerController->EnemyLocation = CombatTargetLocation;
+		}
+	}
 }
 
 FRotator AMain::GetLookAtRotationYaw(FVector Target)
@@ -230,7 +248,7 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AMain::MoveForward(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking))
+	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking) && (MovementStatus != EMovementStatus::EMS_Dead))
 	{
 		// Find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -244,7 +262,7 @@ void AMain::MoveForward(float Value)
 
 void AMain::MoveRight(float Value )
 {
-	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking))
+	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking) && (MovementStatus != EMovementStatus::EMS_Dead))
 	{
 		// Find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -269,6 +287,9 @@ void AMain::TakeActionKeyDown()
 {
 	bTakeActionKeyDown = true;
 
+	if (MovementStatus == EMovementStatus::EMS_Dead)
+		return;
+
 	if (ActiveOverlappingItem)
 	{
 		AWeapon* Weapon = Cast<AWeapon>(ActiveOverlappingItem);
@@ -292,15 +313,7 @@ void AMain::TakeActionKeyUp()
 
 void AMain::DecrementHealth(float Amount)
 {
-	if (Health - Amount <= 0.f)
-	{
-		Health = 0;
-		Die();
-	}
-	else
-	{
-		Health -= Amount;
-	}
+
 
 }
 
@@ -308,12 +321,30 @@ void AMain::Die()
 {
 	UE_LOG(LogTemp, Warning, TEXT("You Died"));
 
+	if (MovementStatus == EMovementStatus::EMS_Dead)
+		return;
+	SetMovementStatus(EMovementStatus::EMS_Dead);
+
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && CombatMontage)
 	{
 		AnimInstance->Montage_Play(CombatMontage, 1.4f);
 		AnimInstance->Montage_JumpToSection(FName("Death"), CombatMontage);
 	}
+}
+
+void AMain::Jump()
+{
+	if (MovementStatus != EMovementStatus::EMS_Dead)
+		Super::Jump();
+
+}
+
+void AMain::DeathEnd()
+{
+	GetMesh()->bPauseAnims = true;
+	GetMesh()->bNoSkeletonUpdate = true;
+	//GetWorldTimerManager().SetTimer(DeathTimer, this, &AEnemy::Disappear, DeathDelay);
 }
 
 void AMain::IncrementCoin(int32 Amount)
@@ -370,7 +401,7 @@ void AMain::SetEquippedWeapon(AWeapon* WeaponToSet)
 
 void AMain::Attack()
 {
-	if (bAttacking == false)
+	if (bAttacking == false && MovementStatus != EMovementStatus::EMS_Dead)
 	{
 		bAttacking = true;
 		SetInterpToEnemy(true);
@@ -428,6 +459,24 @@ void AMain::SetInterpToEnemy(bool Interp)
  float AMain::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
 	 DecrementHealth(DamageAmount);
+
+	 if (Health - DamageAmount <= 0.f)
+	 {
+		 Health = 0;
+		 Die();
+		 if (DamageCauser)
+		 {
+			 AEnemy* Enemy = Cast<AEnemy>(DamageCauser);
+			 if (Enemy)
+			 {
+				 Enemy->bHasValidTarget = false;
+			 }
+		 }
+	 }
+	 else
+	 {
+		 Health -= DamageAmount;
+	 }
 
 	 return DamageAmount;
 

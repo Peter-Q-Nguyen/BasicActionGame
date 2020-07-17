@@ -11,6 +11,7 @@ enum class EMovementStatus : uint8
 {
 	EMS_Normal		UMETA(DisplayName = "Normal"),
 	EMS_Sprint		UMETA(DisplayName = "Sprinting"),
+	EMS_Dead		UMETA(DisplayName = "Dead"),
 
 	EMS_Max			UMETA(DisplayName = "DefaultMAX")
 };
@@ -35,6 +36,15 @@ class BASICACTIONGAME_API AMain : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AMain();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool bHasCombatTarget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat")
+	FVector CombatTargetLocation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
+	class AMainPlayerController* MainPlayerController;
 
 	TArray<FVector> PickupLocations;
 
@@ -68,6 +78,7 @@ public:
 	class AEnemy* CombatTarget;
 
 	FORCEINLINE void SetCombatTarget(AEnemy* Target) { CombatTarget = Target; }
+	FORCEINLINE void SetHasCombatTarget(bool HasTarget) { bHasCombatTarget = HasTarget; }
 
 	FRotator GetLookAtRotationYaw(FVector Target);
 
@@ -124,6 +135,9 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 	void Die();
+
+	virtual void Jump() override;
+
 
 	void IncrementCoin(int32 Amount);
 
@@ -186,4 +200,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void PlaySwingSound();
+
+	UFUNCTION(BlueprintCallable)
+	void DeathEnd();
 };

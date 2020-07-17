@@ -14,6 +14,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Animation/AnimInstance.h"
 #include "Components/CapsuleComponent.h"
+#include "MainPlayerController.h"
 
 #include "Weapon.h"
 
@@ -52,6 +53,8 @@ AEnemy::AEnemy()
 	AttackMaxTime = 3.5f;
 
 	DeathDelay = 5.f;
+
+	bHasValidTarget = false;
 }
 
 // Called when the game starts or when spawned
@@ -91,6 +94,13 @@ void AEnemy::CombatSphereOnOverlapBegin(UPrimitiveComponent* OverlappedComponent
 	{
 		CombatTarget = Main;
 		Main->SetCombatTarget(this);
+		Main->SetHasCombatTarget(true);
+		bHasValidTarget = true;
+		if (Main->MainPlayerController)
+		{
+			Main->MainPlayerController->DisplayEnemyHealthBar();
+
+		}
 		bIsOverlappingCombatSphere = true;
 		Attack();
 	}
@@ -104,8 +114,8 @@ void AEnemy::CombatSphereOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, 
 	{
 		//SetEnemyMovementStatus(EEnemyMovementStatus::EMS_MoveToTarget);
 		bIsOverlappingCombatSphere = false;
-		if (Main->CombatTarget == this)
-			Main->SetCombatTarget(nullptr);
+	
+
 		if (EnemyMovementStatus != EEnemyMovementStatus::EMS_Attacking)
 		{
 			MoveToTarget(Main);
@@ -136,6 +146,20 @@ void AEnemy::AggroSphereOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, A
 		AMain* Main = Cast<AMain>(OtherActor);
 		if (Main)
 		{
+			bHasValidTarget = false;
+
+			if (Main->CombatTarget == this)
+			{
+				Main->SetCombatTarget(nullptr);
+				Main->SetHasCombatTarget(false);
+			}
+
+			if (Main->MainPlayerController)
+			{
+				Main->MainPlayerController->RemoveEnemyHealthBar();
+
+	
+			}
 			SetEnemyMovementStatus(EEnemyMovementStatus::EMS_Idle);
 			if (AIController)
 			{
@@ -227,7 +251,7 @@ void AEnemy::ActivateCollision()
 
 void AEnemy::Attack()
 {
-	if (!Alive())
+	if (!Alive() || !bHasValidTarget)
 		return;
 	if (AIController)
 	{
@@ -265,12 +289,12 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 	if (Health - DamageAmount <= 0.f)
 	{
 
-		AWeapon* Weapon = Cast<AWeapon>(DamageCauser);
-		if (Weapon)
-		{
-			if (Weapon->GetWeaponOwner()->CombatTarget == this)
-				Weapon->GetWeaponOwner()->SetCombatTarget(nullptr);
-		}
+		//AWeapon* Weapon = Cast<AWeapon>(DamageCauser);
+		//if (Weapon)
+		//{
+		//	if (Weapon->GetWeaponOwner()->CombatTarget == this)
+		//		Weapon->GetWeaponOwner()->SetCombatTarget(nullptr);
+		//}
 
 		Health = 0.f;
 		Die();
