@@ -74,10 +74,12 @@ void AWeapon::Equip(AMain* Char)
 {
 	if (Char)
 	{
+		SetInstigator(Char->GetController());
+
 		SkeletalMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 		SkeletalMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		SkeletalMesh->SetSimulatePhysics(false);
-
+		Owner = Char;
 
 		const USkeletalMeshSocket* RightHandSocket = Char->GetMesh()->GetSocketByName("RightHandSocket");
 		if (RightHandSocket)
@@ -111,11 +113,16 @@ void AWeapon::CombatOnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AAc
 				{
 					FVector SocketLocation = WeaponSocket->GetSocketLocation(SkeletalMesh);
 					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Enemy->HitParticles, SocketLocation, FRotator(0.f), false);
-					if (Enemy->HitSound)
-					{
-						UGameplayStatics::PlaySound2D(this, Enemy->HitSound);
-					}
+
 				}
+			}
+			if (Enemy->HitSound)
+			{
+				UGameplayStatics::PlaySound2D(this, Enemy->HitSound);
+			}
+			if (DamageTypeClass)
+			{
+				UGameplayStatics::ApplyDamage(Enemy, Damage, WeaponInstigator, this, DamageTypeClass);
 			}
 		}
 

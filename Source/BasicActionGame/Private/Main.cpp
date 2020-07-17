@@ -307,6 +307,13 @@ void AMain::DecrementHealth(float Amount)
 void AMain::Die()
 {
 	UE_LOG(LogTemp, Warning, TEXT("You Died"));
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && CombatMontage)
+	{
+		AnimInstance->Montage_Play(CombatMontage, 1.4f);
+		AnimInstance->Montage_JumpToSection(FName("Death"), CombatMontage);
+	}
 }
 
 void AMain::IncrementCoin(int32 Amount)
@@ -416,4 +423,12 @@ void AMain::PlaySwingSound()
 void AMain::SetInterpToEnemy(bool Interp)
 {
 	bInterpToEnemy = Interp;
+}
+
+ float AMain::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	 DecrementHealth(DamageAmount);
+
+	 return DamageAmount;
+
 }
