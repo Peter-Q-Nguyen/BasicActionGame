@@ -40,7 +40,8 @@ AEnemy::AEnemy()
 	EnemyMovementStatus = EEnemyMovementStatus::EMS_Idle;
 
 	CombatCollision = CreateDefaultSubobject<UBoxComponent>("CombatCollision");
-	CombatCollision->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("EnemySocket"));
+	CombatCollision->SetupAttachment(GetMesh(), FName("EnemySocket"));
+	//CombatCollision->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("EnemySocket"));
 
 	CombatCollision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	CombatCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
@@ -71,6 +72,7 @@ void AEnemy::BeginPlay()
 
 	CombatCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::CombatOnOverlapBegin);
 	CombatCollision->OnComponentEndOverlap.AddDynamic(this, &AEnemy::CombatOnOverlapEnd);
+	CombatCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 // Called every frame
@@ -102,7 +104,10 @@ void AEnemy::CombatSphereOnOverlapBegin(UPrimitiveComponent* OverlappedComponent
 
 		}
 		bIsOverlappingCombatSphere = true;
-		Attack();
+		//Attack();
+		float AttackTime = FMath::FRandRange(AttackMinTime, AttackMaxTime);
+		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy::Attack, AttackTime);
+		EnemyMovementStatus = EEnemyMovementStatus::EMS_Attacking;
 	}
 
 }
@@ -116,7 +121,7 @@ void AEnemy::CombatSphereOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, 
 		bIsOverlappingCombatSphere = false;
 	
 
-		if (EnemyMovementStatus != EEnemyMovementStatus::EMS_Attacking)
+		if (EnemyMovementStatus == EEnemyMovementStatus::EMS_Attacking)
 		{
 			MoveToTarget(Main);
 			CombatTarget = nullptr;
@@ -175,7 +180,6 @@ void AEnemy::MoveToTarget(class AMain* Target)
 
 	if (AIController)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Move To Target"));
 
 		FAIMoveRequest MoveRequest;
 		MoveRequest.SetGoalActor(Target);
@@ -205,6 +209,7 @@ void AEnemy::CombatOnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AAct
 		AMain* Main = Cast<AMain>(OtherActor);
 		if (Main)
 		{
+
 			if (Main->HitParticles)
 			{
 				const USkeletalMeshSocket* TipSocket = GetMesh()->GetSocketByName("TipSocket");

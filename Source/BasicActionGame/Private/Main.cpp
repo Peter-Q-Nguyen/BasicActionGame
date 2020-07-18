@@ -319,7 +319,6 @@ void AMain::DecrementHealth(float Amount)
 
 void AMain::Die()
 {
-	UE_LOG(LogTemp, Warning, TEXT("You Died"));
 
 	if (MovementStatus == EMovementStatus::EMS_Dead)
 		return;
