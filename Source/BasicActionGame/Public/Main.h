@@ -38,44 +38,44 @@ public:
 	AMain();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	bool bHasCombatTarget;
+		bool bHasCombatTarget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat")
-	FVector CombatTargetLocation;
+		FVector CombatTargetLocation;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
-	class AMainPlayerController* MainPlayerController;
+		class AMainPlayerController* MainPlayerController;
 
 	TArray<FVector> PickupLocations;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
-	class UParticleSystem* HitParticles;
+		class UParticleSystem* HitParticles;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
-	class USoundCue* HitSound;
+		class USoundCue* HitSound;
 
 	UFUNCTION(BlueprintCallable)
-	void ShowPickupLocations();
+		void ShowPickupLocations();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enums")
-	EMovementStatus MovementStatus;
+		EMovementStatus MovementStatus;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enums")
-	EStaminaStatus StaminaStatus;
+		EStaminaStatus StaminaStatus;
 
 	FORCEINLINE void SetStaminaStatus(EStaminaStatus Status) { StaminaStatus = Status; }
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float StaminaDrainRate;
+		float StaminaDrainRate;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-	float MinSprintStamina;
+		float MinSprintStamina;
 
 	float InterpSpeed;
 	bool bInterpToEnemy;
 	void SetInterpToEnemy(bool Interp);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	class AEnemy* CombatTarget;
+		class AEnemy* CombatTarget;
 
 	FORCEINLINE void SetCombatTarget(AEnemy* Target) { CombatTarget = Target; }
 	FORCEINLINE void SetHasCombatTarget(bool HasTarget) { bHasCombatTarget = HasTarget; }
@@ -87,9 +87,9 @@ public:
 	void SetMovementStatus(EMovementStatus Status);
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Running")
-	float RunningSpeed;
+		float RunningSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Running")
-	float SprintingSpeed;
+		float SprintingSpeed;
 
 	bool bShiftKeyDown;
 
@@ -100,18 +100,18 @@ public:
 
 	/** Camera boom, positioning the camera behind the player */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
+		class USpringArmComponent* CameraBoom;
 
 	/** Follow Camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCamera;
+		class UCameraComponent* FollowCamera;
 
 
 	/** Base turn rates to scale turning functions for the camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	float BaseTurnRate;
+		float BaseTurnRate;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
-	float BaseLookUpRate;
+		float BaseLookUpRate;
 
 	/**
 	/*
@@ -120,15 +120,15 @@ public:
 	*/
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Stats")
-	float MaxHealth;
+		float MaxHealth;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats")
-	float Health;
+		float Health;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player Stats")
-	float MaxStamina;
+		float MaxStamina;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats")
-	float Stamina;
+		float Stamina;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Stats")
-	int32 Coins;
+		int32 Coins;
 
 	void DecrementHealth(float Amount);
 
@@ -147,7 +147,7 @@ protected:
 	/**  Called when the game starts or when spawned */
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	/**  Called every frame */
 	virtual void Tick(float DeltaTime) override;
 
@@ -178,29 +178,34 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Items")
-	class AWeapon* EquippedWeapon;
+		class AWeapon* EquippedWeapon;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Items")
-	class AItem* ActiveOverlappingItem;
+		class AItem* ActiveOverlappingItem;
 
 	void SetEquippedWeapon(AWeapon* WeaponToSet);
 	FORCEINLINE AWeapon* GetEquippedWeapon() { return EquippedWeapon; }
 	FORCEINLINE void SetActiveOverlappingItem(AItem* Item) { ActiveOverlappingItem = Item; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Anims")
-	bool bAttacking;
+		bool bAttacking;
 
 	void Attack();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Anims")
-	class UAnimMontage* CombatMontage;
+		class UAnimMontage* CombatMontage;
 
 	UFUNCTION(BlueprintCallable)
-	void AttackEnd();
+		void AttackEnd();
 
 	UFUNCTION(BlueprintCallable)
-	void PlaySwingSound();
+		void PlaySwingSound();
 
 	UFUNCTION(BlueprintCallable)
-	void DeathEnd();
+		void DeathEnd();
+
+	void UpdateCombatTarget();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	TSubclassOf<AEnemy> EnemyFilter;
 };

@@ -27,6 +27,7 @@ AEnemy::AEnemy()
 	AggroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AggroSphere"));
 	AggroSphere->SetupAttachment(GetRootComponent());
 	AggroSphere->InitSphereRadius(600.f);
+	AggroSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
 
 	CombatSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatSphere"));
 	CombatSphere->SetupAttachment(GetRootComponent());
@@ -47,13 +48,15 @@ AEnemy::AEnemy()
 	CombatCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	CombatCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 	CombatCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	bAttacking = false;
 
 	AttackMinTime = 0.5f;
-	AttackMaxTime = 3.5f;
+	AttackMaxTime = 2.5f;
 
-	DeathDelay = 5.f;
+	DeathDelay = 3.f;
 
 	bHasValidTarget = false;
 }
@@ -98,16 +101,14 @@ void AEnemy::CombatSphereOnOverlapBegin(UPrimitiveComponent* OverlappedComponent
 		Main->SetCombatTarget(this);
 		Main->SetHasCombatTarget(true);
 		bHasValidTarget = true;
-		if (Main->MainPlayerController)
-		{
-			Main->MainPlayerController->DisplayEnemyHealthBar();
 
-		}
+		Main->UpdateCombatTarget();
+
 		bIsOverlappingCombatSphere = true;
 		//Attack();
 		float AttackTime = FMath::FRandRange(AttackMinTime, AttackMaxTime);
 		GetWorldTimerManager().SetTimer(AttackTimer, this, &AEnemy::Attack, AttackTime);
-		EnemyMovementStatus = EEnemyMovementStatus::EMS_Attacking;
+		//EnemyMovementStatus = EEnemyMovementStatus::EMS_Attacking;
 	}
 
 }
@@ -115,17 +116,26 @@ void AEnemy::CombatSphereOnOverlapBegin(UPrimitiveComponent* OverlappedComponent
 void AEnemy::CombatSphereOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	AMain* Main = Cast<AMain>(OtherActor);
-	if (Main && Alive())
+	if (Main && OtherComp)
 	{
-		//SetEnemyMovementStatus(EEnemyMovementStatus::EMS_MoveToTarget);
-		bIsOverlappingCombatSphere = false;
-	
 
-		if (EnemyMovementStatus == EEnemyMovementStatus::EMS_Attacking)
+		bIsOverlappingCombatSphere = false;
+		MoveToTarget(Main);
+		CombatTarget = nullptr;
+
+		if (Main->CombatTarget == this)
 		{
-			MoveToTarget(Main);
-			CombatTarget = nullptr;
+			Main->SetCombatTarget(nullptr);
+			Main->bHasCombatTarget = false;
+			Main->UpdateCombatTarget();
 		}
+		if (Main->MainPlayerController)
+		{
+			USkeletalMeshComponent* MainMesh = Cast<USkeletalMeshComponent>(OtherComp);
+			if (MainMesh) Main->MainPlayerController->RemoveEnemyHealthBar();
+		}
+
+
 		GetWorldTimerManager().ClearTimer(AttackTimer);
 	}
 
@@ -156,15 +166,9 @@ void AEnemy::AggroSphereOnOverlapEnd(UPrimitiveComponent* OverlappedComponent, A
 			if (Main->CombatTarget == this)
 			{
 				Main->SetCombatTarget(nullptr);
-				Main->SetHasCombatTarget(false);
 			}
-
-			if (Main->MainPlayerController)
-			{
-				Main->MainPlayerController->RemoveEnemyHealthBar();
-
-	
-			}
+			Main->SetHasCombatTarget(false);
+			Main->UpdateCombatTarget();
 			SetEnemyMovementStatus(EEnemyMovementStatus::EMS_Idle);
 			if (AIController)
 			{
@@ -302,7 +306,7 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 		//}
 
 		Health = 0.f;
-		Die();
+		Die(DamageCauser);
 
 
 	}
@@ -313,7 +317,7 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 	return DamageAmount;
 }
 
-void AEnemy::Die()
+void AEnemy::Die(AActor* Causer)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
@@ -328,6 +332,12 @@ void AEnemy::Die()
 	AggroSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	CombatSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	AMain* Main = Cast<AMain>(Causer);
+	if (Main)
+	{
+		Main->UpdateCombatTarget();
+	}
 }
 
 void AEnemy::DeathEnd()

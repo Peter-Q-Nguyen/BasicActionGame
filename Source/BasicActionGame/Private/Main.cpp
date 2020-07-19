@@ -19,7 +19,7 @@
 // Sets default values
 AMain::AMain()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Create Camera Boom (pulls towards the player if theres a collision
@@ -29,8 +29,8 @@ AMain::AMain()
 	CameraBoom->bUsePawnControlRotation = true; // Rotate arm based on controller
 
 	//Set size for collision capsule
-	GetCapsuleComponent()->SetCapsuleSize(48.f,105.f);
-	
+	GetCapsuleComponent()->SetCapsuleSize(48.f, 105.f);
+
 	// Create follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
@@ -224,7 +224,7 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	check(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump );
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AMain::ShiftKeyDown);
@@ -260,7 +260,7 @@ void AMain::MoveForward(float Value)
 }
 
 
-void AMain::MoveRight(float Value )
+void AMain::MoveRight(float Value)
 {
 	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking) && (MovementStatus != EMovementStatus::EMS_Dead))
 	{
@@ -348,7 +348,7 @@ void AMain::DeathEnd()
 
 void AMain::IncrementCoin(int32 Amount)
 {
-		Coins += Amount;
+	Coins += Amount;
 }
 
 
@@ -455,28 +455,73 @@ void AMain::SetInterpToEnemy(bool Interp)
 	bInterpToEnemy = Interp;
 }
 
- float AMain::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+float AMain::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	 DecrementHealth(DamageAmount);
+	DecrementHealth(DamageAmount);
 
-	 if (Health - DamageAmount <= 0.f)
-	 {
-		 Health = 0;
-		 Die();
-		 if (DamageCauser)
-		 {
-			 AEnemy* Enemy = Cast<AEnemy>(DamageCauser);
-			 if (Enemy)
-			 {
-				 Enemy->bHasValidTarget = false;
-			 }
-		 }
-	 }
-	 else
-	 {
-		 Health -= DamageAmount;
-	 }
+	if (Health - DamageAmount <= 0.f)
+	{
+		Health = 0;
+		Die();
+		if (DamageCauser)
+		{
+			AEnemy* Enemy = Cast<AEnemy>(DamageCauser);
+			if (Enemy)
+			{
+				Enemy->bHasValidTarget = false;
+			}
+		}
+	}
+	else
+	{
+		Health -= DamageAmount;
+	}
 
-	 return DamageAmount;
+	return DamageAmount;
+
+}
+
+void AMain::UpdateCombatTarget()
+{
+	TArray<AActor*> OverlappingActors;
+
+	GetOverlappingActors(OverlappingActors, EnemyFilter);
+
+	if (OverlappingActors.Num() == 0)
+	{
+		if (MainPlayerController)
+		{
+			MainPlayerController->RemoveEnemyHealthBar();
+		}
+		return;
+	}
+
+
+	AEnemy* ClosestEnemy = Cast<AEnemy>(OverlappingActors[0]);
+	if (ClosestEnemy)
+	{
+		float MinDistance = GetDistanceTo(ClosestEnemy);
+
+		for (auto Actor : OverlappingActors)
+		{
+			AEnemy* Enemy = Cast<AEnemy>(Actor);
+			if (Enemy)
+			{
+				float DistanceToActor = GetDistanceTo(Enemy);
+				if (DistanceToActor < MinDistance)
+				{
+					MinDistance = DistanceToActor;
+					ClosestEnemy = Enemy;
+				}
+
+			}
+		}
+	}
+	if (MainPlayerController)
+	{
+		MainPlayerController->DisplayEnemyHealthBar();
+	}
+	SetCombatTarget(ClosestEnemy);
+	bHasCombatTarget = true;
 
 }
