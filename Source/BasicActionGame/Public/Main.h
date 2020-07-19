@@ -138,10 +138,10 @@ public:
 
 	virtual void Jump() override;
 
-
+	UFUNCTION(BlueprintCallable)
 	void IncrementCoin(int32 Amount);
-
-
+	UFUNCTION(BlueprintCallable)
+	void IncrementHealth(float Amount);
 
 protected:
 	/**  Called when the game starts or when spawned */
