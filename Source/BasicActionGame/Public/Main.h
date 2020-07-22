@@ -37,6 +37,9 @@ public:
 	// Sets default values for this character's properties
 	AMain();
 
+	UPROPERTY(EditDefaultsOnly, Category = "SavedData")
+	TSubclassOf<class AItemStorage> WeaponStorage;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 		bool bHasCombatTarget;
 
@@ -174,6 +177,14 @@ public:
 	void TakeActionKeyDown();
 	void TakeActionKeyUp();
 
+
+	bool bPauseMenuKeyDown;
+	void PauseMenuKeyDown();
+	void PauseMenuKeyUp();
+
+
+
+
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
@@ -210,4 +221,9 @@ public:
 	TSubclassOf<AEnemy> EnemyFilter;
 
 	void SwitchLevel(FName LevelName);
+
+	UFUNCTION(BlueprintCallable)
+	void SaveGame();
+	UFUNCTION(BlueprintCallable)
+	void LoadGame(bool SetPosition);
 };

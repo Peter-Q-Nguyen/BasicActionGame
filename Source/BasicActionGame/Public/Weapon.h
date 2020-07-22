@@ -26,6 +26,9 @@ class BASICACTIONGAME_API AWeapon : public AItem
 public:
 	AWeapon();
 
+	UPROPERTY(EditDefaultsOnly, Category = "SaveData")
+	FString Name;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item")
 	EWeaponState WeaponState;
 

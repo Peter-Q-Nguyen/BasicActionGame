@@ -15,6 +15,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Enemy.h"
 #include "MainPlayerController.h"
+#include "BasicActionGameSaveGame.h"
+#include "ItemStorage.h"
 
 // Sets default values
 AMain::AMain()
@@ -66,6 +68,7 @@ AMain::AMain()
 
 	bShiftKeyDown = false;
 	bTakeActionKeyDown = false;
+	bPauseMenuKeyDown = false;
 
 	//initialise Enums
 	MovementStatus = EMovementStatus::EMS_Normal;
@@ -233,6 +236,9 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("TakeAction", IE_Pressed, this, &AMain::TakeActionKeyDown);
 	PlayerInputComponent->BindAction("TakeAction", IE_Released, this, &AMain::TakeActionKeyUp);
 
+	PlayerInputComponent->BindAction("PauseMenu", IE_Pressed, this, &AMain::PauseMenuKeyDown);
+	PlayerInputComponent->BindAction("PauseMenu", IE_Released, this, &AMain::PauseMenuKeyUp);
+
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMain::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMain::MoveRight);
 
@@ -310,6 +316,19 @@ void AMain::TakeActionKeyUp()
 {
 	bTakeActionKeyDown = false;
 }
+
+void AMain::PauseMenuKeyDown()
+{
+	bPauseMenuKeyDown = true;
+	if (MainPlayerController)
+		MainPlayerController->TogglePauseMenu();
+}
+
+void AMain::PauseMenuKeyUp()
+{
+	bPauseMenuKeyDown = false;
+}
+
 
 void AMain::DecrementHealth(float Amount)
 {
@@ -552,4 +571,64 @@ void AMain::SwitchLevel(FName LevelName)
 			UGameplayStatics::OpenLevel(World, LevelName);
 		}
 	}
+}
+
+void AMain::SaveGame()
+{
+	UBasicActionGameSaveGame * SaveGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::CreateSaveGameObject(UBasicActionGameSaveGame::StaticClass()));
+	SaveGameInstance->CharacterStats.Health = Health;
+	SaveGameInstance->CharacterStats.MaxHealth = MaxHealth;
+	SaveGameInstance->CharacterStats.Stamina = Stamina;
+	SaveGameInstance->CharacterStats.MaxStamina = MaxStamina;
+	SaveGameInstance->CharacterStats.Coins = Coins;
+	SaveGameInstance->CharacterStats.Location = GetActorLocation();
+	SaveGameInstance->CharacterStats.Rotation = GetActorRotation();
+
+	if (EquippedWeapon)
+	{
+		SaveGameInstance->CharacterStats.WeaponName = EquippedWeapon->Name;
+	}
+
+	UGameplayStatics::SaveGameToSlot(SaveGameInstance, SaveGameInstance->PlayerName, SaveGameInstance->UserIndex);
+
+
+}
+
+void AMain::LoadGame(bool SetPosition)
+{
+	UBasicActionGameSaveGame* LoadGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::CreateSaveGameObject(UBasicActionGameSaveGame::StaticClass()));
+
+	LoadGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::LoadGameFromSlot(LoadGameInstance->PlayerName, LoadGameInstance->UserIndex));
+
+	Health = LoadGameInstance->CharacterStats.Health;
+	MaxHealth = LoadGameInstance->CharacterStats.MaxHealth;
+	Stamina = LoadGameInstance->CharacterStats.Stamina;
+	MaxStamina = LoadGameInstance->CharacterStats.MaxStamina;
+	Coins = LoadGameInstance->CharacterStats.Coins;
+
+	if (WeaponStorage)
+	{
+		AItemStorage * Weapons = 	GetWorld()->SpawnActor<AItemStorage>(WeaponStorage);
+		if (Weapons)
+		{
+			FString WeaponName = LoadGameInstance->CharacterStats.WeaponName;
+
+			if (Weapons->WeaponMap.Contains(WeaponName))
+			{
+				AWeapon* WeaponToEquip = GetWorld()->SpawnActor<AWeapon>(Weapons->WeaponMap[WeaponName]);
+
+				WeaponToEquip->Equip(this);
+			}
+		}
+	}
+
+
+	
+
+	if (SetPosition)
+	{
+		SetActorLocation(LoadGameInstance->CharacterStats.Location);
+		SetActorRotation(LoadGameInstance->CharacterStats.Rotation);
+
+	}	
 }
