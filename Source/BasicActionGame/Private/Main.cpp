@@ -242,8 +242,8 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMain::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMain::MoveRight);
 
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &AMain::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &AMain::LookUp);
 
 	PlayerInputComponent->BindAxis("TurnRate", this, &AMain::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AMain::LookUpRate);
@@ -254,7 +254,7 @@ void AMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AMain::MoveForward(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.0f) && (!bAttacking) && (MovementStatus != EMovementStatus::EMS_Dead))
+	if (CanMove(Value))
 	{
 		// Find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -279,6 +279,34 @@ void AMain::MoveRight(float Value)
 	}
 }
 
+void AMain::Turn(float Value)
+{
+	if (CanMove(Value))
+	{
+		AddControllerYawInput(Value);
+	}
+}
+
+void AMain::LookUp(float Value)
+{
+	if (CanMove(Value))
+	{
+		AddControllerPitchInput(Value);
+	}
+}
+
+bool AMain::CanMove(float Value)
+{
+	if (MainPlayerController)
+	{
+		return ((Value != 0.0f) && (!bAttacking) &&
+			(MovementStatus != EMovementStatus::EMS_Dead) &&
+			!MainPlayerController->bPauseMenuVisible);
+	}
+	return false;
+
+}
+
 void AMain::TurnAtRate(float Rate)
 {
 	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
@@ -295,6 +323,12 @@ void AMain::TakeActionKeyDown()
 
 	if (MovementStatus == EMovementStatus::EMS_Dead)
 		return;
+
+	if (MainPlayerController)
+	{
+		if (MainPlayerController->bPauseMenuVisible)
+			return;
+	}
 
 	if (ActiveOverlappingItem)
 	{
@@ -353,6 +387,13 @@ void AMain::Die()
 
 void AMain::Jump()
 {
+
+	if (MainPlayerController)
+	{
+		if (MainPlayerController->bPauseMenuVisible)
+			return;
+	}
+
 	if (MovementStatus != EMovementStatus::EMS_Dead)
 		Super::Jump();
 
@@ -631,4 +672,8 @@ void AMain::LoadGame(bool SetPosition)
 		SetActorRotation(LoadGameInstance->CharacterStats.Rotation);
 
 	}	
+
+	SetMovementStatus(EMovementStatus::EMS_Normal);
+	GetMesh()->bPauseAnims = false;
+	GetMesh()->bNoSkeletonUpdate = false;
 }
