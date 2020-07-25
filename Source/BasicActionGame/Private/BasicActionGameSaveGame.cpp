@@ -6,7 +6,7 @@
 UBasicActionGameSaveGame::UBasicActionGameSaveGame()
 {
 	PlayerName = TEXT("Default");
-	UserIndex = 0;
+	UserIndex = 1;
 	CharacterStats.WeaponName = TEXT("");
 
 	CharacterStats.LevelName = TEXT("");

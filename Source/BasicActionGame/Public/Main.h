@@ -146,6 +146,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void IncrementHealth(float Amount);
 
+	FTimerHandle RespawnTimer;
+	bool bRespawning;
+	float FloorLimit;
+
 protected:
 	/**  Called when the game starts or when spawned */
 	virtual void BeginPlay() override;
@@ -236,6 +240,12 @@ public:
 	void SaveGame();
 	UFUNCTION(BlueprintCallable)
 	void LoadGame(bool SetPosition);
+
+	void SaveRespawnData();
+
+	UFUNCTION(BlueprintCallable)
+	void LoadRespawnData();
+	void LoadRespawnDataWithPosition();
 
 	UFUNCTION(BlueprintCallable)
 	void LoadGameNoSwitch();

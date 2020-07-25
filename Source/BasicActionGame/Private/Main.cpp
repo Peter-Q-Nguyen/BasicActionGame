@@ -84,6 +84,10 @@ AMain::AMain()
 	bInterpToEnemy = false;
 
 	bHasCombatTarget = false;
+
+	bRespawning = false;
+
+	FloorLimit = 0.f;
 }
 
 // Called when the game starts or when spawned
@@ -103,7 +107,10 @@ void AMain::BeginPlay()
 		{
 			MainPlayerController->GameModeOnly();
 		}
+		FloorLimit = 6500.f;
 	}
+
+	SaveRespawnData();
 
 }
 
@@ -112,8 +119,26 @@ void AMain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+
 	if (MovementStatus == EMovementStatus::EMS_Dead)
+	{
+		if (!bRespawning)
+		{
+			GetWorldTimerManager().SetTimer(RespawnTimer, this, &AMain::LoadRespawnDataWithPosition, 1.5f);
+			bRespawning = true;
+			UE_LOG(LogTemp, Warning, TEXT("Respawning"));
+		}
 		return;
+	}
+
+	if (GetActorLocation().Z <= FloorLimit &&
+		MovementStatus != EMovementStatus::EMS_Dead)
+	{
+		MovementStatus = EMovementStatus::EMS_Dead;
+		UE_LOG(LogTemp, Warning, TEXT("Dead"));
+		return;
+	}
+
 
 	float DeltaStamina = StaminaDrainRate * DeltaTime;
 
@@ -652,6 +677,31 @@ void AMain::SaveGame()
 
 }
 
+void AMain::SaveRespawnData()
+{
+	UBasicActionGameSaveGame* SaveGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::CreateSaveGameObject(UBasicActionGameSaveGame::StaticClass()));
+	SaveGameInstance->CharacterStats.Health = Health;
+	SaveGameInstance->CharacterStats.MaxHealth = MaxHealth;
+	SaveGameInstance->CharacterStats.Stamina = Stamina;
+	SaveGameInstance->CharacterStats.MaxStamina = MaxStamina;
+	SaveGameInstance->CharacterStats.Coins = Coins;
+	SaveGameInstance->CharacterStats.Location = GetActorLocation();
+	SaveGameInstance->CharacterStats.Rotation = GetActorRotation();
+
+	FString MapName = GetWorld()->GetMapName();
+
+	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
+	SaveGameInstance->CharacterStats.LevelName = MapName;
+
+	if (EquippedWeapon)
+	{
+		SaveGameInstance->CharacterStats.WeaponName = EquippedWeapon->Name;
+	}
+
+	UGameplayStatics::SaveGameToSlot(SaveGameInstance, SaveGameInstance->PlayerName, 0);
+
+}
+
 void AMain::LoadGame(bool SetPosition)
 {
 	UBasicActionGameSaveGame* LoadGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::CreateSaveGameObject(UBasicActionGameSaveGame::StaticClass()));
@@ -730,4 +780,82 @@ void AMain::LoadGameNoSwitch()
 	SetMovementStatus(EMovementStatus::EMS_Normal);
 	GetMesh()->bPauseAnims = false;
 	GetMesh()->bNoSkeletonUpdate = false;
+}
+
+void AMain::LoadRespawnData()
+{
+	UBasicActionGameSaveGame* LoadGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::CreateSaveGameObject(UBasicActionGameSaveGame::StaticClass()));
+
+	LoadGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::LoadGameFromSlot(LoadGameInstance->PlayerName, 0));
+
+	Health = LoadGameInstance->CharacterStats.Health;
+	MaxHealth = LoadGameInstance->CharacterStats.MaxHealth;
+	Stamina = LoadGameInstance->CharacterStats.Stamina;
+	MaxStamina = LoadGameInstance->CharacterStats.MaxStamina;
+	Coins = LoadGameInstance->CharacterStats.Coins;
+
+	if (WeaponStorage)
+	{
+		AItemStorage* Weapons = GetWorld()->SpawnActor<AItemStorage>(WeaponStorage);
+		if (Weapons)
+		{
+			FString WeaponName = LoadGameInstance->CharacterStats.WeaponName;
+
+			if (Weapons->WeaponMap.Contains(WeaponName))
+			{
+				AWeapon* WeaponToEquip = GetWorld()->SpawnActor<AWeapon>(Weapons->WeaponMap[WeaponName]);
+
+				WeaponToEquip->Equip(this);
+			}
+		}
+	}
+
+	SetMovementStatus(EMovementStatus::EMS_Normal);
+	GetMesh()->bPauseAnims = false;
+	GetMesh()->bNoSkeletonUpdate = false;
+
+	GetWorldTimerManager().ClearTimer(RespawnTimer);
+	bRespawning = false;
+}
+
+
+void AMain::LoadRespawnDataWithPosition()
+{
+	UBasicActionGameSaveGame* LoadGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::CreateSaveGameObject(UBasicActionGameSaveGame::StaticClass()));
+
+	LoadGameInstance = Cast<UBasicActionGameSaveGame>(UGameplayStatics::LoadGameFromSlot(LoadGameInstance->PlayerName, 0));
+
+	Health = LoadGameInstance->CharacterStats.Health;
+	MaxHealth = LoadGameInstance->CharacterStats.MaxHealth;
+	Stamina = LoadGameInstance->CharacterStats.Stamina;
+	MaxStamina = LoadGameInstance->CharacterStats.MaxStamina;
+	Coins = LoadGameInstance->CharacterStats.Coins;
+
+	if (WeaponStorage)
+	{
+		AItemStorage* Weapons = GetWorld()->SpawnActor<AItemStorage>(WeaponStorage);
+		if (Weapons)
+		{
+			FString WeaponName = LoadGameInstance->CharacterStats.WeaponName;
+
+			if (Weapons->WeaponMap.Contains(WeaponName))
+			{
+				AWeapon* WeaponToEquip = GetWorld()->SpawnActor<AWeapon>(Weapons->WeaponMap[WeaponName]);
+
+				WeaponToEquip->Equip(this);
+			}
+		}
+	}
+
+	SetActorLocation(LoadGameInstance->CharacterStats.Location);
+	SetActorRotation(LoadGameInstance->CharacterStats.Rotation);
+
+	
+	SetMovementStatus(EMovementStatus::EMS_Normal);
+	GetMesh()->bPauseAnims = false;
+	GetMesh()->bNoSkeletonUpdate = false;
+
+	GetWorldTimerManager().ClearTimer(RespawnTimer);
+
+	bRespawning = false;
 }
